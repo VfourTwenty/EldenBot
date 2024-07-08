@@ -1,5 +1,10 @@
 GAME COMPLETION, WEAPONS OR OTHER ITEMS ARE NOT REQUIRED (ONLY HAVING OPENED ACCESS TO THE DLC)
 
+Bot demo:
+
+https://github.com/Vfor20/EldenBot/assets/132915930/31fce448-e4b3-4aae-9223-36b2c930b819
+
+
 If you've already played the Elden Ring DLC you should know about the "Rauh Ancient Ruins, East" lost grace spot, where you can gain endless runes with no combat.
 This is truly an amazing place for the late game and even more so for the beginning. If you are just starting the game, all you need is to defeat Radan and Mog at the Mogwin palace 
 to open access to the DLC, and then watch a guide on youtube on how to get to this grace, which will really be a fun journey :) 
@@ -9,6 +14,11 @@ at the very top of the main file
 
 ![Снимок экрана 2024-07-08 193617](https://github.com/Vfor20/EldenBot/assets/132915930/25c70ec2-643e-4f45-98ae-8a7df48b91fc)
 they all can be pip3 installed
+
+![Снимок экрана 2024-07-08 201454](https://github.com/Vfor20/EldenBot/assets/132915930/fb808a11-55ab-40d1-94a6-f870e2f1723a)
+the proper way to place the helpers file
+
+
 
 one more thing you'll need is to have Tesseract installed on you computer (you can look it up, it's pretty easy), by default it should install on your C drive, but if you choose another
 location for it, you'll have to change the executable path here in main:
@@ -21,7 +31,7 @@ It's STRONGLY RECOMMENDED to use the Golden Scarab talisman at least to increace
 like this:
 
 ![photo_2024-07-08_19-51-05](https://github.com/Vfor20/EldenBot/assets/132915930/456ddffb-7411-40f8-b1fd-f6dc61d3dbbe)
-these will greatly boots your rune income!
+these will greatly boost your rune income!
 
 Once you've set up the bot, installed all the packeges and got to the grace spot, put the game into windowed mode and place it into the top left corner of you screen, that's
 needed so the mouse clicks the proper things. Then, launch the main script, the bot will start after 5 seconds once you've dome that so you have time to open the game. Enjoy! ;)
