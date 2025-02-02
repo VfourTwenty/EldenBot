@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EldenBot – Rune Catcher</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: #111;
+            color: #fff;
+            min-height: 100%; /* Ensure the page can grow with content */
+            overflow-y: auto; /* Enable vertical scrolling */
+        }
+
+        #gameCanvas {
+            position: fixed; /* Fix the canvas in the background */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1; /* Keep it behind all content */
+            background: #000;
+        }
+
+        .score {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            font-size: 24px;
+            z-index: 2; /* Keep score above everything else */
+        }
+
+        .overlay {
+            position: relative; /* Ensure normal document flow */
+            max-width: 60%; /* Limit width for more side space */
+            margin: 20px auto; /* Center content horizontally */
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 8px;
+            z-index: 2; /* Ensure overlay stays above canvas */
+            color: #fff;
+            text-align: center; /* Center-align text */
+        }
+
+        .overlay h1 {
+            font-size: 28px;
+            margin-top: 0;
+            color: #ffcc00;
+        }
+
+        .overlay p, .overlay ul {
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        .overlay img {
+            max-width: 100%;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        video {
+            width: 100%;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<div class="score" id="scoreDisplay">Score: 0</div>
+<div class="overlay">
+    <h1>EldenBot</h1>
+    <p>GAME COMPLETION, WEAPONS OR OTHER ITEMS ARE NOT REQUIRED (ONLY HAVING OPENED ACCESS TO THE DLC)</p>
+
+    <p><strong>Bot demo:</strong> 2024-07-08.19-07-21.1.1.1.mp4</p>
+
+    <p>
+        If you've already played the Elden Ring DLC, you should know about the
+        <strong>"Rauh Ancient Ruins, East"</strong> lost grace spot, where you can gain endless runes with no combat...
+    </p>
+
+    <p>
+        In order for the bot to work, you'll need to have downloaded the <code>main.py</code> at least, and the
+        <code>win32_helpers.py</code> located in the helpers folder. All other dependencies can be seen at the very
+        top of the main file.
+    </p>
+
+    <img src="Снимок экрана 2024-07-08 193617.png" alt="Dependencies install screenshot" />
+    <p>They all can be installed via <code>pip3</code>.</p>
+
+    <img src="Снимок экрана 2024-07-08 201454.png" alt="Helpers file placement" />
+    <p>The proper way to place the helpers file.</p>
+
+    <p>
+        One more thing you'll need is to have Tesseract installed on your computer (you can look it up, it's pretty
+        easy). By default, it should install on your C drive, but if you choose another location for it, you'll have
+        to change the executable path here in the main file:
+    </p>
+    <img src="Снимок экрана 2024-07-08 194033.png" alt="Tesseract setup" />
+
+    <p>
+        It is needed for keeping track of the amount of runes you've farmed in case your computer freezes and the bot
+        falls out of its routine...
+    </p>
+
+    <p><strong>Stop the script manually with <code>Ctrl+C</code>.</strong></p>
+
+    <p>
+        This project was inspired by <a href="https://github.com/AdamBissonnette/elden-ring-bot" target="_blank">
+        Adam Bissonnette's Elden Ring bot</a> and
+        <a href="https://www.youtube.com/watch?v=ViFgSxzHhRU" target="_blank">Owen Lockwood's guide</a>. The information these people have gathered was very useful!
+    </p>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Resize the canvas dynamically
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // Score setup
+    let score = 0;
+    const scoreDisplay = document.getElementById('scoreDisplay');
+
+    // Mouse position tracker
+    const mouse = { x: 0, y: 0 };
+    window.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        mouse.x = e.clientX - rect.left;
+        mouse.y = e.clientY - rect.top;
+    });
+
+    // Rune Images and Properties
+    const runeTypes = [
+        { points: 1, rarity: 0.5, image: "images/rune1.png" }, // Most common
+        { points: 3, rarity: 0.3, image: "images/rune2.png" },
+        { points: 5, rarity: 0.15, image: "images/rune3.png" },
+        { points: 7, rarity: 0.04, image: "images/rune4.png" },
+        { points: 10, rarity: 0.01, image: "images/rune5.png" } // Rarest
+    ];
+
+    const runeImages = runeTypes.map(type => {
+        const img = new Image();
+        img.src = type.image;
+        return img;
+    });
+
+    // Runes array
+    const runes = [];
+    const spawnInterval = 500;
+    const baseSpeed = 1;
+
+    // Select a rune type based on rarity
+    function getRandomRuneType() {
+        const rand = Math.random();
+        let cumulativeRarity = 0;
+
+        for (const type of runeTypes) {
+            cumulativeRarity += type.rarity;
+            if (rand <= cumulativeRarity) {
+                return type;
+            }
+        }
+        return runeTypes[0]; // Fallback to the most common type
+    }
+
+    // Spawn a new rune
+    function spawnRune() {
+        const runeType = getRandomRuneType();
+        const x = Math.random() * (canvas.width - 30) + 15; // Random x position
+        const speed = baseSpeed + Math.random() * 2;
+        runes.push({ x, y: -30, speed, type: runeType });
+    }
+
+    // Collision detection between mouse and rune
+    function isMouseHovering(rune) {
+        const dx = mouse.x - rune.x;
+        const dy = mouse.y - rune.y;
+        return Math.sqrt(dx * dx + dy * dy) < 20; // 20 is approx the rune radius
+    }
+
+    // Main game loop
+    function gameLoop() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Update and draw each rune
+        for (let i = runes.length - 1; i >= 0; i--) {
+            const rune = runes[i];
+            rune.y += rune.speed;
+
+            // Draw rune image
+            const img = runeImages[runeTypes.indexOf(rune.type)];
+            ctx.drawImage(img, rune.x - 15, rune.y - 15, 30, 30);
+
+            // Check if mouse is hovering over the rune
+            if (isMouseHovering(rune)) {
+                score += rune.type.points;
+                scoreDisplay.textContent = 'Score: ' + score;
+                runes.splice(i, 1); // Remove rune after collection
+                continue;
+            }
+
+            // Remove rune if it falls off the screen
+            if (rune.y > canvas.height) {
+                runes.splice(i, 1);
+            }
+        }
+
+        requestAnimationFrame(gameLoop);
+    }
+
+    // Start game
+    gameLoop();
+    setInterval(spawnRune, spawnInterval);
+</script>
+</body>
+</html>
